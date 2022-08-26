@@ -39,8 +39,7 @@ class Speedtest {
 
     let launchOptions = {
       headless: false,
-      executablePath:
-        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      executablePath: browserPath,
       args: ["--start-maximized"],
     };
 
