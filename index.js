@@ -1,10 +1,10 @@
-import puppeteer from "puppeteer-core";
-import events from "events";
-import os from "os";
-import fs from "fs";
-export var event = new events.EventEmitter();
+const puppeteer = require("puppeteer-core");
+const events = require("events");
+const os = require("os");
+const fs = require("fs");
+var event = new events.EventEmitter();
 
-export class Speedtest {
+class Speedtest {
   constructor() {
     this.event = event;
   }
@@ -115,3 +115,5 @@ export class Speedtest {
     console.log("Tests Complete");
   }
 }
+
+module.exports = Speedtest;
