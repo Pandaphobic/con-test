@@ -2,4 +2,8 @@
 
 The CONnectivity TESTer you've been waiting for!
 
-## Events
+## Todos
+
+- [] Write Readme
+- [] ??
+- [] Profit

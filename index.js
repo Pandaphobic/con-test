@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer-core";
 import events from "events";
 import os from "os";
+import fs from "fs";
 export var event = new events.EventEmitter();
 
 export class Speedtest {
@@ -15,8 +16,21 @@ export class Speedtest {
 
     switch (os.type()) {
       case "Windows_NT":
-        browserPath =
+        const loc1 =
           "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe";
+        const loc2 =
+          "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+
+        if (fs.existsSync(loc1)) {
+          browserPath = loc1;
+        }
+        if (fs.existsSync(loc2)) {
+          browserPath = loc2;
+        } else {
+          // TODO: Handle this better
+          return console.error("CHROME NOT INSTALLED");
+        }
+
         break;
 
       default:
