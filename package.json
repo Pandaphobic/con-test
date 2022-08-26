@@ -1,8 +1,8 @@
 {
-  "name": "con-test",
-  "version": "1.0.0",
+  "name": "@pandaphobic/con-test",
+  "version": "1.0.1",
   "main": "index.js",
-  "author": "Pandaphobic",
+  "author": "pandaphobic",
   "license": "MIT",
   "scripts": {
     "test": "node app"
@@ -13,5 +13,22 @@
     "encoding": "^0.1.13",
     "puppeteer-core": "^16.2.0",
     "utf-8-validate": "^5.0.9"
-  }
+  },
+  "description": "The CONnectivity TESTer you've been waiting for!",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pandaphobic/con-test.git"
+  },
+  "keywords": [
+    "speed",
+    "test",
+    "connectivity",
+    "test",
+    "tester"
+  ],
+  "bugs": {
+    "url": "https://github.com/Pandaphobic/con-test/issues"
+  },
+  "homepage": "https://github.com/Pandaphobic/con-test#readme"
 }
