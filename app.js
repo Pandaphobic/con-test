@@ -1,6 +1,6 @@
-import { Speedtest } from "./index.js";
+const speedtest = require(".");
 
-const test = new Speedtest();
+const test = new speedtest();
 
 test.runTest();
 

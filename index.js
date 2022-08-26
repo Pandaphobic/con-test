@@ -2,6 +2,7 @@ const puppeteer = require("puppeteer-core");
 const events = require("events");
 const os = require("os");
 const fs = require("fs");
+const { findChrome } = require("find-chrome-bin");
 var event = new events.EventEmitter();
 
 class Speedtest {
@@ -11,34 +12,17 @@ class Speedtest {
 
   async runTest() {
     let url = "https://gazelle.speedtestcustom.com/";
-
     let browserPath = "";
-
-    switch (os.type()) {
-      case "Windows_NT":
-        const loc1 =
-          "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe";
-        const loc2 =
-          "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-
-        if (fs.existsSync(loc1)) {
-          browserPath = loc1;
-        }
-        if (fs.existsSync(loc2)) {
-          browserPath = loc2;
-        } else {
-          // TODO: Handle this better
-          return console.error("CHROME NOT INSTALLED");
-        }
-
-        break;
-
-      default:
-        break;
+    try {
+      browserPath = await findChrome().then((e) => {
+        return e.executablePath;
+      });
+    } catch (err) {
+      console.error("Chrome Not Installed", err);
     }
 
     let launchOptions = {
-      headless: false,
+      headless: true,
       executablePath: browserPath,
       args: ["--start-maximized"],
     };

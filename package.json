@@ -11,6 +11,7 @@
   "dependencies": {
     "bufferutil": "^4.0.6",
     "encoding": "^0.1.13",
+    "find-chrome-bin": "^1.0.2",
     "puppeteer-core": "^16.2.0",
     "utf-8-validate": "^5.0.9"
   },
