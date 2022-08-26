@@ -1,8 +1,6 @@
 const puppeteer = require("puppeteer-core");
-const events = require("events");
-const os = require("os");
-const fs = require("fs");
 const { findChrome } = require("find-chrome-bin");
+const events = require("events");
 var event = new events.EventEmitter();
 
 class Speedtest {
