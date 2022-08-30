@@ -1,21 +1,21 @@
-const speedtest = require(".");
+const Speedtest = require(".");
 
-const test = new speedtest();
+const speedtest = new Speedtest("https://CUSTOM_NAME.speedtestcustom.com/");
 
-test.runTest();
+speedtest.runTest();
 
-test.event.on("ping", (e) => {
+speedtest.event.on("ping", (e) => {
   console.log(e);
 });
 
-test.event.on("jitter", (e) => {
+speedtest.event.on("jitter", (e) => {
   console.log(e);
 });
 
-test.event.on("downloadResult", (e) => {
+speedtest.event.on("downloadResult", (e) => {
   console.log(e);
 });
 
-test.event.on("uploadResult", (e) => {
+speedtest.event.on("uploadResult", (e) => {
   console.log(e);
 });

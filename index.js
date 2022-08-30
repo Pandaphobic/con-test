@@ -4,12 +4,13 @@ const events = require("events");
 var event = new events.EventEmitter();
 
 class Speedtest {
-  constructor() {
+  constructor(url) {
     this.event = event;
+    this.url = url;
   }
 
   async runTest() {
-    let url = "https://gazelle.speedtestcustom.com/";
+    let url = this.url;
     let browserPath = "";
     try {
       browserPath = await findChrome().then((e) => {
