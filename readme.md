@@ -36,4 +36,17 @@ speedtest.event.on("uploadResult", (e) => {
   console.log(e);
 });
 
+speedtest.event.on("isp", (e) => {
+  console.log(e);
+});
+
+speedtest.event.on("ip", (e) => {
+  console.log(e);
+});
+
+speedtest.event.on("location", (e) => {
+  console.log(e);
+});
+
+
 ```

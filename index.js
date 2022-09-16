@@ -59,6 +59,33 @@ class Speedtest {
     // console.log("Jitter:", jitter);
     event.emit("jitter", jitter);
 
+    // ISP
+    const isp = await page.$eval(
+      "#root > div > div.test.test--download.test--in-progress > div.container > footer > div.host-display-transition > div > div.host-display__connection.host-display__connection--isp > div.host-display__connection-body > h3",
+      (item) => item.textContent
+    );
+
+    // console.log(isp);
+    event.emit("isp", isp);
+
+    // IP
+    const ip = await page.$eval(
+      "#root > div > div.test.test--download.test--in-progress > div.container > footer > div.host-display-transition > div > div.host-display__connection.host-display__connection--isp > div.host-display__connection-body > h4",
+      (item) => item.textContent
+    );
+
+    // console.log(ip);
+    event.emit("ip", ip);
+
+    // Location
+    const location = await page.$eval(
+      "#root > div > div.test.test--download.test--in-progress > div.container > footer > div.host-display-transition > div > div.host-display__connection.host-display__connection--sponsor > div.host-display__connection-body > h4 > span",
+      (item) => item.textContent
+    );
+
+    // console.log(location);
+    event.emit("location", location);
+
     // Download Started
     await page.waitForSelector(
       "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-speed > div.result-tile.result-active-test.result-tile-download > div.result-body > div > div > span"
