@@ -5,7 +5,7 @@
   "author": "pandaphobic",
   "license": "MIT",
   "scripts": {
-    "test": "node app"
+    "test": "node example"
   },
   "type": "commonjs",
   "dependencies": {
@@ -15,7 +15,7 @@
     "puppeteer-core": "^16.2.0",
     "utf-8-validate": "^5.0.9"
   },
-  "description": "The CONnectivity TESTer you've been waiting for!",
+  "description": "The Connectivity Tester you've been waiting for!",
   "devDependencies": {},
   "repository": {
     "type": "git",
