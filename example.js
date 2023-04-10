@@ -1,6 +1,6 @@
 const Speedtest = require(".");
 
-const speedtest = new Speedtest("https://CUSTOM_NAME.speedtestcustom.com/");
+const speedtest = new Speedtest("https://gazelle.speedtestcustom.com/");
 
 speedtest.runTest();
 // speedtest.stopTest();
