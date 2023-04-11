@@ -3,6 +3,8 @@ const { findChrome } = require("find-chrome-bin");
 const events = require("events");
 var event = new events.EventEmitter();
 
+var testStopped = false;
+
 class Speedtest {
   constructor(url) {
     this.event = event;
@@ -63,6 +65,7 @@ class Speedtest {
   }
 
   async stopTest() {
+    testStopped = true;
     let pages = await this.browser.pages();
     // close all pages
     for (let i = 0; i < pages.length; i++) {
@@ -81,15 +84,18 @@ class Speedtest {
     }
     // close browser
     this.browser.close();
-    this.browser.on("disconnected", () => {
-      event.emit("error", reason);
-    });
+    if (!testStopped) {
+      this.browser.on("disconnected", () => {
+        event.emit("error", reason);
+      });
+    }
   }
 
   async #test() {
     // return a promise that resolves when the test is complete
     return new Promise(async (resolve, reject) => {
       // Emit Test Started
+      testStopped = false;
       event.emit("started", "Test Started");
 
       // Create Page
