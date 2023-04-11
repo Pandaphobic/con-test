@@ -4,6 +4,7 @@ const events = require("events");
 var event = new events.EventEmitter();
 
 var testStopped = false;
+var testStarted = false;
 
 class Speedtest {
   constructor(url) {
@@ -14,6 +15,8 @@ class Speedtest {
   }
 
   async runTest() {
+    if (testStarted) return;
+    testStarted = true;
     let browserPath = "";
     // find and use local chrome install
     try {
@@ -42,7 +45,7 @@ class Speedtest {
     });
 
     // Timeout after 1 minute
-    const timeoutId = setTimeout(() => {
+    this.timeoutId = setTimeout(() => {
       // this should never really fire unless the test is stalled
       // network errors will be caught by the #test and returned as error
       this.errorTest("Test Timed Out after 60 seconds of incactivity");
@@ -52,28 +55,32 @@ class Speedtest {
     await this.#test().then((e) => {
       // success
       if (e === 0) {
-        clearTimeout(timeoutId);
+        clearTimeout(this.timeoutId);
         event.emit("complete", "Test Complete");
+        testStarted = false;
         this.browser.close();
       }
       // error
       else {
-        clearTimeout(timeoutId);
+        clearTimeout(this.timeoutId);
         this.errorTest(e);
       }
     });
   }
 
   async stopTest() {
-    testStopped = true;
+    clearTimeout(this.timeoutId);
     let pages = await this.browser.pages();
     // close all pages
     for (let i = 0; i < pages.length; i++) {
       await pages[i].close();
     }
     // close browser
-    event.emit("stopped", "Test Stopped");
-    this.browser.close();
+    this.browser.close().then(() => {
+      event.emit("stopped", "Test Stopped");
+    });
+    testStopped = true;
+    testStarted = false;
   }
 
   async errorTest(reason) {
@@ -86,6 +93,7 @@ class Speedtest {
     this.browser.close();
     if (!testStopped) {
       this.browser.on("disconnected", () => {
+        testStarted = false;
         event.emit("error", reason);
       });
     }

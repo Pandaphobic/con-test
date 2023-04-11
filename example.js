@@ -4,10 +4,20 @@ const speedtest = new Speedtest("https://CUSTOM.speedtestcustom.com/");
 
 speedtest.runTest();
 
-// wait 20 seconds then call speedtest.stopTest()
-// const timeoutId = setTimeout(() => {
-//   speedtest.stopTest();
-// }, 20000);
+// wait 10 seconds then call speedtest.stopTest()
+const timeoutId1 = setTimeout(() => {
+  speedtest.stopTest();
+}, 10000);
+
+// run the test again after 12 seconds
+const timeoutId2 = setTimeout(() => {
+  speedtest.runTest();
+}, 12000);
+
+// try runnig it while another is running (won't work)
+const timeoutId3 = setTimeout(() => {
+  speedtest.runTest();
+}, 14000);
 
 speedtest.event.on("started", (e) => {
   // e is the started result
