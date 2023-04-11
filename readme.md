@@ -61,8 +61,4 @@ speedtest.event.on("complete", (e) => {
   console.log(e);
 });
 
-speedtest.event.on("timeout", (e) => {
-  console.log(e);
-});
-
 ```
