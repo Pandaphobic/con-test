@@ -7,121 +7,279 @@ class Speedtest {
   constructor(url) {
     this.event = event;
     this.url = url;
+    this.browser = null;
+    this.timeoutId = null;
   }
 
   async runTest() {
-    let url = this.url;
     let browserPath = "";
+    // find and use local chrome install
     try {
       browserPath = await findChrome().then((e) => {
         return e.executablePath;
       });
     } catch (err) {
       console.error("Chrome Not Installed", err);
+      this.errorTest("Chrome Not Installed");
+    }
+    // if chrome not installed, exit
+    if (browserPath === "") {
+      this.errorTest("Chrome Not Installed");
+      return;
     }
 
     let launchOptions = {
       headless: true,
       executablePath: browserPath,
-      args: ["--start-maximized"],
+      // args: ["--start-maximized"],
     };
 
-    let browser = await puppeteer.launch(launchOptions);
+    // setup the browser object
+    this.browser = await puppeteer.launch(launchOptions).catch((err) => {
+      this.errorTest("Browser Launch Error");
+    });
 
-    let page = await browser.newPage();
-    await page.setUserAgent(
-      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
-    );
+    // Timeout after 1 minute
+    const timeoutId = setTimeout(() => {
+      // this should never really fire unless the test is stalled
+      // network errors will be caught by the #test and returned as error
+      this.errorTest("Test Timed Out after 60 seconds of incactivity");
+    }, 60000);
 
-    await page.goto(url, { waitUntil: "networkidle0" });
-    await page.click("#main-content > div.button__wrapper > div > button");
+    // Start test - if zero returned, clear timeout
+    await this.#test().then((e) => {
+      // success
+      if (e === 0) {
+        clearTimeout(timeoutId);
+        event.emit("complete", "Test Complete");
+        this.browser.close();
+        process.exit(0);
+      }
+      // error
+      else {
+        clearTimeout(timeoutId);
+        this.errorTest(e);
+      }
+    });
+  }
 
-    // Ping
-    await page.waitForSelector(
-      "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-latency > div.result-tile.result-tile-ping > div.result-body > div > div > span"
-    );
-    const ping = await page.$eval(
-      "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-latency > div.result-tile.result-tile-ping > div.result-body > div > div > span",
-      (item) => item.textContent
-    );
-    // console.log("Ping:", ping);
-    event.emit("ping", ping);
+  async stopTest() {
+    let pages = await this.browser.pages();
+    // close all pages
+    for (let i = 0; i < pages.length; i++) {
+      await pages[i].close();
+    }
+    // close browser
+    event.emit("stopped", "Test Stopped");
+    process.exit(0);
+  }
 
-    // Jitter
-    await page.waitForSelector(
-      "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-latency > div.result-tile.result-tile-jitter > div.result-body > div > div > span"
-    );
-    const jitter = await page.$eval(
-      "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-latency > div.result-tile.result-tile-jitter > div.result-body > div > div > span",
-      (item) => item.textContent
-    );
+  async errorTest(reason) {
+    let pages = await this.browser.pages();
+    // close all pages
+    for (let i = 0; i < pages.length; i++) {
+      await pages[i].close();
+    }
+    // close browser
+    event.emit("error", reason);
+    process.exit(0);
+  }
 
-    // console.log("Jitter:", jitter);
-    event.emit("jitter", jitter);
+  async #test() {
+    // return a promise that resolves when the test is complete
+    return new Promise(async (resolve, reject) => {
+      // Emit Test Started
+      event.emit("started", "Test Started");
 
-    // ISP
-    const isp = await page.$eval(
-      "#root > div > div.test.test--download.test--in-progress > div.container > footer > div.host-display-transition > div > div.host-display__connection.host-display__connection--isp > div.host-display__connection-body > h3",
-      (item) => item.textContent
-    );
+      // Create Page
+      try {
+        var page = await this.browser.newPage();
+      } catch (err) {
+        resolve("Page Creation Error");
+      }
 
-    // console.log(isp);
-    event.emit("isp", isp);
+      // Set User Agent
+      try {
+        await page.setUserAgent(
+          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
+        );
+      } catch (err) {
+        resolve("User Agent Error");
+      }
 
-    // IP
-    const ip = await page.$eval(
-      "#root > div > div.test.test--download.test--in-progress > div.container > footer > div.host-display-transition > div > div.host-display__connection.host-display__connection--isp > div.host-display__connection-body > h4",
-      (item) => item.textContent
-    );
+      try {
+        // Load Page
+        await page.goto(this.url, { waitUntil: "networkidle0" });
+      } catch (err) {
+        // this.errorTest("Page Load Error");
+        resolve("Page Load Error");
+      }
 
-    // console.log(ip);
-    event.emit("ip", ip);
+      try {
+        // Click Start Test
+        await page.click("#main-content > div.button__wrapper > div > button");
+      } catch (error) {
+        // this.errorTest("Page Load Error");
+        resolve("Page Load Error");
+      }
 
-    // Location
-    const location = await page.$eval(
-      "#root > div > div.test.test--download.test--in-progress > div.container > footer > div.host-display-transition > div > div.host-display__connection.host-display__connection--sponsor > div.host-display__connection-body > h4 > span",
-      (item) => item.textContent
-    );
+      // Wait for Ping
+      try {
+        await page.waitForSelector(
+          "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-latency > div.result-tile.result-tile-ping > div.result-body > div > div > span"
+        );
+      } catch (err) {
+        // timeout
+        // this.errorTest("Ping Timeout");
+        resolve("Ping Timeout");
+      }
 
-    // console.log(location);
-    event.emit("location", location);
+      // Gather Ping
+      try {
+        const ping = await page.$eval(
+          "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-latency > div.result-tile.result-tile-ping > div.result-body > div > div > span",
+          (item) => item.textContent
+        );
+        // Emit Ping Result
+        event.emit("ping", ping);
+      } catch (err) {
+        // error
+        // this.errorTest(err);
+        resolve(err);
+      }
 
-    // Download Started
-    await page.waitForSelector(
-      "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-speed > div.result-tile.result-active-test.result-tile-download > div.result-body > div > div > span"
-    );
-    // console.log("Download Started");
+      // Wait for Jitter
+      try {
+        await page.waitForSelector(
+          "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-latency > div.result-tile.result-tile-jitter > div.result-body > div > div > span"
+        );
+      } catch (err) {
+        // timeout
+        // this.errorTest("Jitter Timeout");
+        resolve("Jitter Timeout");
+      }
 
-    // Upload Started (Signals that download is complete)
-    await page.waitForSelector(
-      "#root > div > div.test.test--upload.test--in-progress > div.container > main > div > div.results-speed > div.result-tile.result-active-test.result-tile-upload > div.result-body > div > div > span"
-    );
+      // Gather Jitter
+      try {
+        const jitter = await page.$eval(
+          "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-latency > div.result-tile.result-tile-jitter > div.result-body > div > div > span",
+          (item) => item.textContent
+        );
+        // Emit Jitter Result
+        event.emit("jitter", jitter);
+      } catch (err) {
+        // error
+        // this.errorTest("Jitter Error");
+        resolve("Jitter Error");
+      }
 
-    const downloadResult = await page.$eval(
-      "#root > div > div.test.test--upload.test--in-progress > div.container > main > div > div.results-speed > div.result-tile.result-tile-download > div.result-body > div > div > span",
-      (item) => item.textContent
-    );
+      // Gather ISP
+      try {
+        const isp = await page.$eval(
+          "#root > div > div.test.test--download.test--in-progress > div.container > footer > div.host-display-transition > div > div.host-display__connection.host-display__connection--isp > div.host-display__connection-body > h3",
+          (item) => item.textContent
+        );
 
-    // console.log("Download: ", downloadResult);
-    event.emit("downloadResult", downloadResult);
+        // Emit ISP Result
+        event.emit("isp", isp);
+      } catch (err) {
+        // error
+        // this.errorTest("ISP Error");
+        resolve("ISP Error");
+      }
 
-    // console.log("Upload Started");
+      // Gather IP
+      try {
+        const ip = await page.$eval(
+          "#root > div > div.test.test--download.test--in-progress > div.container > footer > div.host-display-transition > div > div.host-display__connection.host-display__connection--isp > div.host-display__connection-body > h4",
+          (item) => item.textContent
+        );
+        // Emit IP Result
+        event.emit("ip", ip);
+      } catch (err) {
+        // timeout
+        // this.errorTest("IP Timeout");
+        resolve("IP Timeout");
+      }
 
-    // Share links only show at the end when all tests are done
-    await page.waitForSelector(
-      "#root > div > div.test.test--finished.test--in-progress > div.container > main > div.share-assembly > div.share__links > span"
-    );
+      // Gather Location
+      try {
+        const location = await page.$eval(
+          "#root > div > div.test.test--download.test--in-progress > div.container > footer > div.host-display-transition > div > div.host-display__connection.host-display__connection--sponsor > div.host-display__connection-body > h4 > span",
+          (item) => item.textContent
+        );
+        // Emit Location Result
+        event.emit("location", location);
+      } catch (err) {
+        // timeout
+        // this.errorTest("Location Timeout");
+        resolve("Location Timeout");
+      }
 
-    const uploadResult = await page.$eval(
-      "#root > div > div.test.test--finished.test--in-progress > div.container > main > div.results-container.results-container-stage-finished > div.results-speed > div.result-tile.result-tile-upload > div.result-body > div > div > span",
-      (item) => item.textContent
-    );
+      // Download Started
+      try {
+        await page.waitForSelector(
+          "#root > div > div.test.test--download.test--in-progress > div.container > main > div > div.results-speed > div.result-tile.result-active-test.result-tile-download > div.result-body > div > div > span"
+        );
+      } catch (err) {
+        // timeout
+        // this.errorTest("Download Timeout");
+        resolve("Download Timeout");
+      }
 
-    // console.log("Upload: ", uploadResult);
-    event.emit("uploadResult", uploadResult);
+      // Upload Started (Signals that download is complete)
+      try {
+        await page.waitForSelector(
+          "#root > div > div.test.test--upload.test--in-progress > div.container > main > div > div.results-speed > div.result-tile.result-active-test.result-tile-upload > div.result-body > div > div > span"
+        );
+      } catch (err) {
+        // timeout
+        // this.errorTest("Upload Timeout");
+        resolve("Upload Timeout");
+      }
 
-    browser.close();
-    console.log("Tests Complete");
+      // Gather Download
+      try {
+        const downloadResult = await page.$eval(
+          "#root > div > div.test.test--upload.test--in-progress > div.container > main > div > div.results-speed > div.result-tile.result-tile-download > div.result-body > div > div > span",
+          (item) => item.textContent
+        );
+        // Emit Download Result
+        event.emit("downloadResult", downloadResult);
+      } catch (err) {
+        // timeout
+        // this.errorTest("Download Error");
+        resolve("Download Error");
+      }
+
+      // Share links only show at the end when all tests are done
+      try {
+        await page.waitForSelector(
+          "#root > div > div.test.test--finished.test--in-progress > div.container > main > div.share-assembly > div.share__links > span"
+        );
+      } catch (err) {
+        // timeout
+        // this.errorTest("Download Timeout");
+        resolve("Download Timeout");
+      }
+      // Gather Upload
+      try {
+        const uploadResult = await page.$eval(
+          "#root > div > div.test.test--finished.test--in-progress > div.container > main > div.results-container.results-container-stage-finished > div.results-speed > div.result-tile.result-tile-upload > div.result-body > div > div > span",
+          (item) => item.textContent
+        );
+        // Emit Upload Result
+        event.emit("uploadResult", uploadResult);
+      } catch (err) {
+        // timeout
+        // this.errorTest("Upload Error");
+        resolve("Upload Error");
+      }
+
+      this.browser.close();
+      resolve(0);
+      return;
+    });
   }
 }
 

@@ -1,68 +1,70 @@
-# CON-TEST
+const Speedtest = require(".");
 
-The CONnectivity TESTer you've been waiting for!
-
-## Install
-
-`yarn add @pandaphobic/con-test`
-or
-`npm install @pandaphobic/con-test`
-
-## Example
-
-```
-const Speedtest = require("@pandaphobic/con-test");
-
-// Must include a link to a CUSTOM speedtest url
-// These can be created at https://www.ookla.com/speedtest-custom
-// Should look like: https://CUSTOM_NAME.speedtestcustom.com/
-const speedtest = new Speedtest(CUSTOM_SPEEDTEST_URL);
+const speedtest = new Speedtest("https://CUSTOM.speedtestcustom.com/");
 
 speedtest.runTest();
-// speedtest.stopTest();
+
+// wait 20 seconds then call speedtest.stopTest()
+// const timeoutId = setTimeout(() => {
+//   speedtest.stopTest();
+// }, 20000);
+
+speedtest.event.on("started", (e) => {
+  // e is the started result
+  console.log(e);
+});
 
 speedtest.event.on("ping", (e) => {
+  // e is the ping result
   console.log(e);
 });
 
 speedtest.event.on("jitter", (e) => {
+  // e is the jitter result
   console.log(e);
 });
 
 speedtest.event.on("downloadResult", (e) => {
+  // e is the download result
   console.log(e);
 });
 
 speedtest.event.on("uploadResult", (e) => {
+  // e is the upload result
   console.log(e);
 });
 
 speedtest.event.on("isp", (e) => {
+  // e is the isp result
   console.log(e);
 });
 
 speedtest.event.on("ip", (e) => {
+  // e is the ip result
   console.log(e);
 });
 
 speedtest.event.on("location", (e) => {
+  // e is the location result
   console.log(e);
 });
 
 speedtest.event.on("stopped", (e) => {
+  // e is the stopped result
   console.log(e);
 });
 
 speedtest.event.on("error", (e) => {
+  // e is the error result
   console.log(e);
 });
 
 speedtest.event.on("complete", (e) => {
+  // e is the complete result
   console.log(e);
 });
 
 speedtest.event.on("timeout", (e) => {
+  // e is the timeout result
   console.log(e);
 });
-
-```
