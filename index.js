@@ -31,7 +31,7 @@ class Speedtest {
     let launchOptions = {
       headless: true,
       executablePath: browserPath,
-      // args: ["--start-maximized"],
+      args: ["--single-process", "--no-zygote"],
     };
 
     // setup the browser object
@@ -53,7 +53,6 @@ class Speedtest {
         clearTimeout(timeoutId);
         event.emit("complete", "Test Complete");
         this.browser.close();
-        process.exit(0);
       }
       // error
       else {
@@ -71,7 +70,7 @@ class Speedtest {
     }
     // close browser
     event.emit("stopped", "Test Stopped");
-    process.exit(0);
+    this.browser.close();
   }
 
   async errorTest(reason) {
@@ -81,8 +80,10 @@ class Speedtest {
       await pages[i].close();
     }
     // close browser
-    event.emit("error", reason);
-    process.exit(0);
+    this.browser.close();
+    this.browser.on("disconnected", () => {
+      event.emit("error", reason);
+    });
   }
 
   async #test() {
