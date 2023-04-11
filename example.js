@@ -1,23 +1,31 @@
 const Speedtest = require(".");
 
-const speedtest = new Speedtest("https://CUSTOM.speedtestcustom.com/");
+const speedtest = new Speedtest("https://gazelle.speedtestcustom.com/");
 
 speedtest.runTest();
 
 // wait 10 seconds then call speedtest.stopTest()
 const timeoutId1 = setTimeout(() => {
   speedtest.stopTest();
+  clearInterval(timeoutId1);
 }, 10000);
 
 // run the test again after 12 seconds
 const timeoutId2 = setTimeout(() => {
   speedtest.runTest();
+  clearInterval(timeoutId2);
 }, 12000);
 
 // try runnig it while another is running (won't work)
 const timeoutId3 = setTimeout(() => {
   speedtest.runTest();
+  clearInterval(timeoutId3);
 }, 14000);
+
+const timeoutId4 = setTimeout(() => {
+  speedtest.stopTest();
+  clearInterval(timeoutId4);
+}, 15000);
 
 speedtest.event.on("started", (e) => {
   // e is the started result

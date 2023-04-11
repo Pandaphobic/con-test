@@ -3,20 +3,19 @@ const { findChrome } = require("find-chrome-bin");
 const events = require("events");
 var event = new events.EventEmitter();
 
-var testStopped = false;
-var testStarted = false;
-
 class Speedtest {
   constructor(url) {
     this.event = event;
     this.url = url;
     this.browser = null;
     this.timeoutId = null;
+    this.running = false;
+    this.stopped = false;
   }
 
   async runTest() {
-    if (testStarted) return;
-    testStarted = true;
+    if (this.running) return;
+    this.running = true;
     let browserPath = "";
     // find and use local chrome install
     try {
@@ -24,7 +23,7 @@ class Speedtest {
         return e.executablePath;
       });
     } catch (err) {
-      console.error("Chrome Not Installed", err);
+      // console.error("Chrome Not Installed", err);
       this.errorTest("Chrome Not Installed");
     }
     // if chrome not installed, exit
@@ -40,9 +39,11 @@ class Speedtest {
     };
 
     // setup the browser object
-    this.browser = await puppeteer.launch(launchOptions).catch((err) => {
+    try {
+      this.browser = await puppeteer.launch(launchOptions);
+    } catch (err) {
       this.errorTest("Browser Launch Error");
-    });
+    }
 
     // Timeout after 1 minute
     this.timeoutId = setTimeout(() => {
@@ -57,7 +58,7 @@ class Speedtest {
       if (e === 0) {
         clearTimeout(this.timeoutId);
         event.emit("complete", "Test Complete");
-        testStarted = false;
+        this.running = false;
         this.browser.close();
       }
       // error
@@ -69,6 +70,7 @@ class Speedtest {
   }
 
   async stopTest() {
+    this.stopped = true;
     clearTimeout(this.timeoutId);
     let pages = await this.browser.pages();
     // close all pages
@@ -78,9 +80,8 @@ class Speedtest {
     // close browser
     this.browser.close().then(() => {
       event.emit("stopped", "Test Stopped");
+      this.running = false;
     });
-    testStopped = true;
-    testStarted = false;
   }
 
   async errorTest(reason) {
@@ -91,9 +92,9 @@ class Speedtest {
     }
     // close browser
     this.browser.close();
-    if (!testStopped) {
+    if (!this.stopped) {
       this.browser.on("disconnected", () => {
-        testStarted = false;
+        this.running = false;
         event.emit("error", reason);
       });
     }
@@ -103,7 +104,7 @@ class Speedtest {
     // return a promise that resolves when the test is complete
     return new Promise(async (resolve, reject) => {
       // Emit Test Started
-      testStopped = false;
+      this.stopped = false;
       event.emit("started", "Test Started");
 
       // Create Page
@@ -126,7 +127,6 @@ class Speedtest {
         // Load Page
         await page.goto(this.url, { waitUntil: "networkidle0" });
       } catch (err) {
-        // this.errorTest("Page Load Error");
         resolve("Page Load Error");
       }
 
@@ -134,7 +134,6 @@ class Speedtest {
         // Click Start Test
         await page.click("#main-content > div.button__wrapper > div > button");
       } catch (error) {
-        // this.errorTest("Page Load Error");
         resolve("Page Load Error");
       }
 
@@ -145,7 +144,6 @@ class Speedtest {
         );
       } catch (err) {
         // timeout
-        // this.errorTest("Ping Timeout");
         resolve("Ping Timeout");
       }
 
