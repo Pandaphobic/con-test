@@ -1,9 +1,18 @@
 const Speedtest = require(".");
 
-const speedtest = new Speedtest("https://gazelle.speedtestcustom.com/");
+const speedtest = new Speedtest("https://CUSTOM.speedtestcustom.com/");
 
 speedtest.runTest();
-// speedtest.stopTest();
+
+// wait 20 seconds then call speedtest.stopTest()
+// const timeoutId = setTimeout(() => {
+//   speedtest.stopTest();
+// }, 20000);
+
+speedtest.event.on("started", (e) => {
+  // e is the started result
+  console.log(e);
+});
 
 speedtest.event.on("ping", (e) => {
   // e is the ping result

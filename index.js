@@ -24,13 +24,14 @@ class Speedtest {
     }
     // if chrome not installed, exit
     if (browserPath === "") {
+      this.errorTest("Chrome Not Installed");
       return;
     }
 
     let launchOptions = {
       headless: true,
       executablePath: browserPath,
-      args: ["--start-maximized"],
+      // args: ["--start-maximized"],
     };
 
     // setup the browser object
@@ -42,7 +43,7 @@ class Speedtest {
     const timeoutId = setTimeout(() => {
       // this should never really fire unless the test is stalled
       // network errors will be caught by the #test and returned as error
-      this.timeoutTest();
+      this.errorTest("Test Timed Out after 60 seconds of incactivity");
     }, 60000);
 
     // Start test - if zero returned, clear timeout
@@ -51,9 +52,8 @@ class Speedtest {
       if (e === 0) {
         clearTimeout(timeoutId);
         event.emit("complete", "Test Complete");
-        this.browser.close().then(() => {
-          console.log("Browser Closed");
-        });
+        this.browser.close();
+        process.exit(0);
       }
       // error
       else {
@@ -63,30 +63,52 @@ class Speedtest {
     });
   }
 
-  stopTest() {
-    this.browser.close();
+  async stopTest() {
+    let pages = await this.browser.pages();
+    // close all pages
+    for (let i = 0; i < pages.length; i++) {
+      await pages[i].close();
+    }
+    // close browser
     event.emit("stopped", "Test Stopped");
+    process.exit(0);
   }
 
-  timeoutTest() {
-    this.browser.close();
-    event.emit("timeout", "Test Timed Out");
-  }
-
-  errorTest(reason) {
-    this.browser.close();
+  async errorTest(reason) {
+    let pages = await this.browser.pages();
+    // close all pages
+    for (let i = 0; i < pages.length; i++) {
+      await pages[i].close();
+    }
+    // close browser
     event.emit("error", reason);
+    process.exit(0);
   }
 
   async #test() {
     // return a promise that resolves when the test is complete
     return new Promise(async (resolve, reject) => {
-      let page = await this.browser.newPage();
-      await page.setUserAgent(
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
-      );
+      // Emit Test Started
+      event.emit("started", "Test Started");
+
+      // Create Page
+      try {
+        var page = await this.browser.newPage();
+      } catch (err) {
+        resolve("Page Creation Error");
+      }
+
+      // Set User Agent
+      try {
+        await page.setUserAgent(
+          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
+        );
+      } catch (err) {
+        resolve("User Agent Error");
+      }
 
       try {
+        // Load Page
         await page.goto(this.url, { waitUntil: "networkidle0" });
       } catch (err) {
         // this.errorTest("Page Load Error");
@@ -256,6 +278,7 @@ class Speedtest {
 
       this.browser.close();
       resolve(0);
+      return;
     });
   }
 }
